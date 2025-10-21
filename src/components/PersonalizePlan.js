@@ -1,118 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import { FaPaperPlane, FaTimes } from 'react-icons/fa'; // Added FaTimes for potential close button
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import { FaPaperPlane, FaTimes, FaMapMarkerAlt } from "react-icons/fa";
+import Sidebar from "./Sidebar"; // ✅ Import Sidebar
 
-// Styled Components
-const PersonalizeContainer = styled.div`
+// ---------------- Styled Components ----------------
+const PageContainer = styled.div`
+  display: flex;
   min-height: 100vh;
-  background: #f5f9fc;
+  background: #f7f8fc;
+`;
+
+const SidebarWrapper = styled.div`
+  width: 260px;
+  background: #fff;
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
+`;
+
+const ContentWrapper = styled.div`
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 2rem;
-  font-family: 'Arial', sans-serif;
-  color: #333;
 `;
 
 const FormCard = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-  padding: 2.5rem 3rem;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  max-width: 480px;
   width: 100%;
-  max-width: 600px;
-  text-align: center;
-`;
-
-const FormTitle = styled.h2`
-  color: #1e3c72;
-  margin-bottom: 2rem;
-  font-size: 2rem;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 1.5rem;
-  text-align: left;
-`;
-
-const Label = styled.label`
-  display: block;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  color: #555;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 0.8rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  box-sizing: border-box; /* Include padding in width */
-  transition: border-color 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #2a5298;
-    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.2);
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 0.8rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  box-sizing: border-box;
-  transition: border-color 0.3s ease;
-  background-color: white; /* Ensure consistent background */
-  appearance: none; /* Remove default arrow */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666' width='18px' height='18px'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3Cpath d='M0 0h24v24H0z' fill='none'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.8rem center;
-
-  &:focus {
-    outline: none;
-    border-color: #2a5298;
-    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.2);
-  }
-`;
-
-const SubmitButton = styled.button`
-  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-  color: white;
-  border: none;
-  padding: 0.8rem 1.8rem;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  justify-content: center;
-  margin-top: 2rem;
-  width: 100%;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(46, 204, 113, 0.4);
-  }
-
-  &:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
-  }
-`;
-
-const StatusMessage = styled.p`
-  margin-top: 1rem;
-  font-size: 1rem;
-  color: ${props => props.type === 'success' ? '#27ae60' : '#e74c3c'};
+  position: relative;
 `;
 
 const CloseButton = styled.button`
@@ -121,205 +41,373 @@ const CloseButton = styled.button`
   right: 15px;
   background: none;
   border: none;
-  font-size: 1.8rem;
-  color: #aaa;
+  font-size: 1.2rem;
   cursor: pointer;
-  transition: color 0.2s ease;
+`;
 
+const FormTitle = styled.h2`
+  margin-bottom: 1.5rem;
+  text-align: center;
+`;
+
+const FormGroup = styled.div`
+  margin-bottom: 1.5rem;
+  position: relative;
+`;
+
+const Label = styled.label`
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+`;
+
+const InputWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  position: relative;
+`;
+
+const Input = styled.input`
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+`;
+
+const LocationButton = styled.button`
+  margin-left: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+`;
+
+const SuggestionsList = styled.ul`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 40px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+`;
+
+const SuggestionItem = styled.li`
+  padding: 0.5rem;
+  cursor: pointer;
   &:hover {
-    color: #666;
+    background: #f0f0f0;
   }
 `;
 
+const Select = styled.select`
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+`;
 
+const SubmitButton = styled.button`
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+`;
+
+const Message = styled.div`
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: bold;
+  background: ${({ type }) => (type === "error" ? "#f8d7da" : "#d4edda")};
+  color: ${({ type }) => (type === "error" ? "#721c24" : "#155724")};
+`;
+
+// ---------------- Component ----------------
 function PersonalizePlan() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    startLocation: '', // Added startLocation
-    destination: '',
-    startDate: '',
-    endDate: '',
-    budget: '',
-    groupType: 'solo',
+    startLocation: "",
+    destination: "",
+    startDate: "",
+    endDate: "",
+    groupType: "solo",
   });
+
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
 
-  useEffect(() => {
-    // Pre-condition check: user must be logged in.
-    // In a real app, you'd verify the token here as well
-    const token = localStorage.getItem('access');
-    if (!token) {
-      navigate('/login');
+  const [suggestions, setSuggestions] = useState({
+    startLocation: [],
+    destination: [],
+  });
+
+  // ✅ Fetch autocomplete suggestions
+  const fetchSuggestions = async (query, field) => {
+    if (!query) {
+      setSuggestions((prev) => ({ ...prev, [field]: [] }));
+      return;
     }
-  }, [navigate]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query
+        )}&addressdetails=1&limit=5&countrycodes=in`
+      );
+      const data = await res.json();
+      const formatted = data.map((item) => ({ description: item.display_name }));
+      setSuggestions((prev) => ({ ...prev, [field]: formatted }));
+    } catch (err) {
+      console.error("Error fetching suggestions:", err);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-    setMessageType('');
+  // ✅ Use current location
+  const handleUseMyLocation = async (field) => {
+    if (formData[field]) {
+      setFormData((prev) => ({ ...prev, [field]: "" }));
+      return;
+    }
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&countrycodes=in`
+          );
+          const data = await response.json();
+          const address = data.display_name || `${latitude}, ${longitude}`;
+          setFormData((prev) => ({ ...prev, [field]: address }));
+        } catch (err) {
+          alert("Failed to fetch location details.");
+        }
+      },
+      (error) => {
+        if (error.code === 1) {
+          alert("Permission denied. Please allow location access.");
+        } else {
+          alert("Unable to retrieve your location.");
+        }
+      }
+    );
+  };
 
-    // Form validation (basic example)
-    if (!formData.startLocation || !formData.destination || !formData.startDate || !formData.endDate || !formData.budget) {
-      setMessage('Please fill in all required fields.');
-      setMessageType('error');
-      setLoading(false);
+  // ✅ Handle input typing
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "startLocation" || name === "destination") {
+      fetchSuggestions(value, name);
+    }
+  };
+
+  // ✅ Handle suggestion click
+  const handleSuggestionClick = (field, suggestion) => {
+    setFormData((prev) => ({ ...prev, [field]: suggestion.description }));
+    setSuggestions((prev) => ({ ...prev, [field]: [] }));
+  };
+
+  // ✅ Submit to backend
+  // ✅ Submit to backend
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setMessage("");
+  try {
+    const token = localStorage.getItem("access");
+    if (!token) {
+      navigate("/login");
       return;
     }
 
-    try {
-      // Simulate sending data to your backend/AI module
-      // In a real application, you would send this data to your API:
-      // const response = await fetch('/api/travel-preferences', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('access')}`
-      //   },
-      //   body: JSON.stringify(formData)
-      // });
-      // const data = await response.json();
-      // if (!response.ok) {
-      //   throw new Error(data.message || 'Failed to submit preferences');
-      // }
+    const response = await fetch("http://127.0.0.1:8000/api/travel/personalize-plan/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(formData),
+    });
 
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call delay
+    const data = await response.json();
 
-      // Output: Confirmation of preference submission
-      setMessage('Your preferences have been submitted successfully! We will generate a customized itinerary for you.');
-      setMessageType('success');
+    if (response.ok) {
+      setMessage("Travel plan saved successfully!");
+      setMessageType("success");
 
-      // Post-condition: Preference saved in database (simulated)
-      console.log('Preferences submitted:', formData);
-
-      // Optionally, clear form or redirect after success
-      setFormData({
-        startLocation: '', // Clear startLocation
-        destination: '',
-        startDate: '',
-        endDate: '',
-        budget: '',
-        groupType: 'solo',
+      // 🔥 Call itinerary generation API right after saving
+      const itineraryRes = await fetch("http://127.0.0.1:8000/api/travel/generate-itinerary/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
       });
 
-    } catch (error) {
-      console.error("Error submitting preferences:", error);
-      setMessage(`Error: ${error.message || 'Failed to submit preferences. Please try again.'}`);
-      setMessageType('error');
-    } finally {
-      setLoading(false);
+      const itineraryData = await itineraryRes.json();
+
+      // ✅ Navigate to itinerary page with data
+      navigate("/itinerary", { state: { itinerary: itineraryData.itinerary } });
+    } else {
+      setMessage(data.detail || "Failed to save travel plan.");
+      setMessageType("error");
     }
-  };
+  } catch (error) {
+    setMessage("An error occurred while saving the travel plan.");
+    setMessageType("error");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
-    <PersonalizeContainer>
-      <FormCard style={{ position: 'relative' }}>
-        <CloseButton onClick={() => navigate('/dashboard')}>
-          <FaTimes />
-        </CloseButton>
-        <FormTitle>Personalize Your Travel Plan</FormTitle>
-        <form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="startLocation">Starting Location</Label>
-            <Input
-              type="text"
-              id="startLocation"
-              name="startLocation"
-              value={formData.startLocation}
-              onChange={handleChange}
-              placeholder="e.g., New York, London, Your City"
-              required
-            />
-          </FormGroup>
+    <PageContainer>
+      {/* ✅ Sidebar on the left */}
+      <SidebarWrapper>
+        <Sidebar />
+      </SidebarWrapper>
 
-          <FormGroup>
-            <Label htmlFor="destination">Destination</Label>
-            <Input
-              type="text"
-              id="destination"
-              name="destination"
-              value={formData.destination}
-              onChange={handleChange}
-              placeholder="e.g., Paris, Japan, Coastal California"
-              required
-            />
-          </FormGroup>
+      {/* ✅ Main content on the right */}
+      <ContentWrapper>
+        <FormCard>
+          <CloseButton onClick={() => navigate("/dashboard")}>
+            <FaTimes />
+          </CloseButton>
+          <FormTitle>Personalize Your Travel Plan</FormTitle>
 
-          <FormGroup>
-            <Label htmlFor="startDate">Start Date</Label>
-            <Input
-              type="date"
-              id="startDate"
-              name="startDate"
-              value={formData.startDate}
-              onChange={handleChange}
-              required
-            />
-          </FormGroup>
+          <form onSubmit={handleSubmit}>
+            {/* Starting Location */}
+            <FormGroup>
+              <Label>Starting Location</Label>
+              <InputWrapper>
+                <Input
+                  type="text"
+                  name="startLocation"
+                  value={formData.startLocation}
+                  onChange={handleInputChange}
+                  placeholder="Enter starting location"
+                  autoComplete="off"
+                />
+                <LocationButton
+                  type="button"
+                  onClick={() => handleUseMyLocation("startLocation")}
+                >
+                  {formData.startLocation ? <FaTimes /> : <FaMapMarkerAlt />}
+                </LocationButton>
+              </InputWrapper>
+              {suggestions.startLocation.length > 0 && (
+                <SuggestionsList>
+                  {suggestions.startLocation.map((s, idx) => (
+                    <SuggestionItem
+                      key={idx}
+                      onClick={() => handleSuggestionClick("startLocation", s)}
+                    >
+                      {s.description}
+                    </SuggestionItem>
+                  ))}
+                </SuggestionsList>
+              )}
+            </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="endDate">End Date</Label>
-            <Input
-              type="date"
-              id="endDate"
-              name="endDate"
-              value={formData.endDate}
-              onChange={handleChange}
-              required
-            />
-          </FormGroup>
+            {/* Destination */}
+            <FormGroup>
+              <Label>Destination</Label>
+              <InputWrapper>
+                <Input
+                  type="text"
+                  name="destination"
+                  value={formData.destination}
+                  onChange={handleInputChange}
+                  placeholder="Enter destination"
+                  autoComplete="off"
+                />
+                <LocationButton
+                  type="button"
+                  onClick={() => handleUseMyLocation("destination")}
+                >
+                  {formData.destination ? <FaTimes /> : <FaMapMarkerAlt />}
+                </LocationButton>
+              </InputWrapper>
+              {suggestions.destination.length > 0 && (
+                <SuggestionsList>
+                  {suggestions.destination.map((s, idx) => (
+                    <SuggestionItem
+                      key={idx}
+                      onClick={() => handleSuggestionClick("destination", s)}
+                    >
+                      {s.description}
+                    </SuggestionItem>
+                  ))}
+                </SuggestionsList>
+              )}
+            </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="budget">Budget (e.g., USD)</Label>
-            <Input
-              type="number"
-              id="budget"
-              name="budget"
-              value={formData.budget}
-              onChange={handleChange}
-              placeholder="e.g., 2000"
-              min="0"
-              required
-            />
-          </FormGroup>
+            {/* Dates */}
+            <FormGroup>
+              <Label>Start Date</Label>
+              <Input
+                type="date"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleInputChange}
+                required
+              />
+            </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="groupType">Type of Group</Label>
-            <Select
-              id="groupType"
-              name="groupType"
-              value={formData.groupType}
-              onChange={handleChange}
-            >
-              <option value="solo">Solo</option>
-              <option value="couple">Couple</option>
-              <option value="family">Family with Kids</option>
-              <option value="friends">Friends</option>
-              <option value="large-group">Large Group</option>
-            </Select>
-          </FormGroup>
+            <FormGroup>
+              <Label>End Date</Label>
+              <Input
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleInputChange}
+                required
+              />
+            </FormGroup>
 
-          {/* Interests (comma-separated) - REMOVED AS REQUESTED */}
+            
 
-          <SubmitButton type="submit" disabled={loading}>
-            {loading ? 'Submitting...' : (
-              <>
-                <FaPaperPlane /> Submit Preferences
-              </>
-            )}
-          </SubmitButton>
+            {/* Submit */}
+            <SubmitButton type="submit" disabled={loading}>
+              <FaPaperPlane />
+              {loading ? "Saving..." : "Save Plan"}
+            </SubmitButton>
 
-          {message && <StatusMessage type={messageType}>{message}</StatusMessage>}
-        </form>
-      </FormCard>
-    </PersonalizeContainer>
+            {message && <Message type={messageType}>{message}</Message>}
+          </form>
+        </FormCard>
+      </ContentWrapper>
+    </PageContainer>
   );
 }
 

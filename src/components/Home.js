@@ -199,7 +199,7 @@ function Home() {
     <HeroSection aria-label="Welcome to Travel Buddy">
       <BackgroundAnimation aria-hidden="true" />
       <ContentWrapper>
-        <Title>Your Perfect Travel Adventure Awaits ✈️</Title>
+        <Title>Your Perfect Travel Adventure Awaits </Title>
         <Subtitle>
           Plan your dream vacation with our AI-powered travel assistant. Get personalized 
           recommendations, the best deals, and create unforgettable memories.
@@ -209,14 +209,14 @@ function Home() {
         </CTAButton>
         
         <FeaturesGrid>
-          {features.map((feature, index) => (
-            <FeatureCard key={index}>
-              <FeatureIcon aria-hidden="true">{feature.icon}</FeatureIcon>
-              <FeatureTitle>{feature.title}</FeatureTitle>
-              <FeatureDescription>{feature.description}</FeatureDescription>
-            </FeatureCard>
-          ))}
-        </FeaturesGrid>
+  {features.map((feature, index) => (
+    <FeatureCard to="/login" key={index}>
+      <FeatureIcon aria-hidden="true">{feature.icon}</FeatureIcon>
+      <FeatureTitle>{feature.title}</FeatureTitle>
+      <FeatureDescription>{feature.description}</FeatureDescription>
+    </FeatureCard>
+  ))}
+</FeaturesGrid>
       </ContentWrapper>
     </HeroSection>
   );
