@@ -10,6 +10,7 @@ import PersonalizePlan from './components/PersonalizePlan';
 import ItineraryPage from './components/ItineraryPage';
 import AddItineraryPage from './components/AddItineraryPage';
 import TopItineraries from './components/TopItineraries';
+import AllItinerariesPage from './components/AllItinerariesPage';
 
 function App() {
   return (
@@ -27,7 +28,7 @@ function App() {
             <Route path="/plans/:planId/itineraries/add" element={<AddItineraryPage />} />
             <Route path="/itinerary" element={<ItineraryPage />} />
             <Route path="/top-itineraries" element={<TopItineraries />} />
-
+            <Route path="/all-itineraries" element={<AllItinerariesPage />} />
 
         </Routes>
       </div>

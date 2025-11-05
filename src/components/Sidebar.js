@@ -78,7 +78,7 @@ function Sidebar() {
         <SidebarLink onClick={() => navigate("/dashboard")}>
           <FaChartLine /> Dashboard
         </SidebarLink>
-        <SidebarLink onClick={() => navigate("/add-trip")}>
+        <SidebarLink onClick={() => navigate("/personalize-plan")}>
           <FaPlusCircle /> Add Trip
         </SidebarLink>
         <SidebarLink onClick={() => navigate("/top-itineraries")}>
@@ -87,9 +87,9 @@ function Sidebar() {
         <SidebarLink onClick={() => navigate("/personalize-plan")}>
           <FaGlobeAmericas /> Personalized Planning
         </SidebarLink>
-        <SidebarLink onClick={() => navigate("/trips")}>
-          <FaPlane /> My Trips
-        </SidebarLink>
+        {/* <SidebarLink onClick={() => navigate("/all-itineraries")}>
+          <FaPlane /> All Itineraries
+        </SidebarLink> */}
       </SidebarMenu>
       <LogoutButton onClick={handleLogout}>
         <FaSignOutAlt /> Sign Out

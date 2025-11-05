@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { FaPaperPlane, FaTimes, FaMapMarkerAlt } from "react-icons/fa";
-import Sidebar from "./Sidebar"; // ✅ Import Sidebar
+import { FaPaperPlane, FaTimes, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
+import Sidebar from "./Sidebar";
 
 // ---------------- Styled Components ----------------
 const PageContainer = styled.div`
@@ -43,11 +43,18 @@ const CloseButton = styled.button`
   border: none;
   font-size: 1.2rem;
   cursor: pointer;
+  color: #666;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #000;
+  }
 `;
 
 const FormTitle = styled.h2`
   margin-bottom: 1.5rem;
   text-align: center;
+  color: #333;
 `;
 
 const FormGroup = styled.div`
@@ -59,6 +66,7 @@ const Label = styled.label`
   display: block;
   margin-bottom: 0.5rem;
   font-weight: bold;
+  color: #333;
 `;
 
 const InputWrapper = styled.div`
@@ -72,6 +80,12 @@ const Input = styled.input`
   padding: 0.75rem;
   border: 1px solid #ccc;
   border-radius: 8px;
+  font-size: 1rem;
+
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+  }
 `;
 
 const LocationButton = styled.button`
@@ -82,6 +96,13 @@ const LocationButton = styled.button`
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #0056b3;
+  }
 `;
 
 const SuggestionsList = styled.ul`
@@ -98,21 +119,21 @@ const SuggestionsList = styled.ul`
   max-height: 200px;
   overflow-y: auto;
   z-index: 10;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 `;
 
 const SuggestionItem = styled.li`
-  padding: 0.5rem;
+  padding: 0.75rem;
   cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
   &:hover {
     background: #f0f0f0;
   }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
 `;
 
 const SubmitButton = styled.button`
@@ -125,11 +146,15 @@ const SubmitButton = styled.button`
   border-radius: 8px;
   font-size: 1rem;
   cursor: pointer;
-
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #218838;
+  }
 
   &:disabled {
     background: #ccc;
@@ -145,6 +170,19 @@ const Message = styled.div`
   font-weight: bold;
   background: ${({ type }) => (type === "error" ? "#f8d7da" : "#d4edda")};
   color: ${({ type }) => (type === "error" ? "#721c24" : "#155724")};
+`;
+
+const LoadingSpinner = styled(FaSpinner)`
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
 `;
 
 // ---------------- Component ----------------
@@ -167,7 +205,7 @@ function PersonalizePlan() {
     destination: [],
   });
 
-  // ✅ Fetch autocomplete suggestions
+  // Fetch autocomplete suggestions
   const fetchSuggestions = async (query, field) => {
     if (!query) {
       setSuggestions((prev) => ({ ...prev, [field]: [] }));
@@ -180,14 +218,18 @@ function PersonalizePlan() {
         )}&addressdetails=1&limit=5&countrycodes=in`
       );
       const data = await res.json();
-      const formatted = data.map((item) => ({ description: item.display_name }));
+      const formatted = data.map((item) => ({
+        description: item.display_name,
+        lat: item.lat,
+        lon: item.lon,
+      }));
       setSuggestions((prev) => ({ ...prev, [field]: formatted }));
     } catch (err) {
       console.error("Error fetching suggestions:", err);
     }
   };
 
-  // ✅ Use current location
+  // Use current location
   const handleUseMyLocation = async (field) => {
     if (formData[field]) {
       setFormData((prev) => ({ ...prev, [field]: "" }));
@@ -221,7 +263,7 @@ function PersonalizePlan() {
     );
   };
 
-  // ✅ Handle input typing
+  // Handle input typing
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -230,60 +272,123 @@ function PersonalizePlan() {
     }
   };
 
-  // ✅ Handle suggestion click
+  // Handle suggestion click
   const handleSuggestionClick = (field, suggestion) => {
     setFormData((prev) => ({ ...prev, [field]: suggestion.description }));
     setSuggestions((prev) => ({ ...prev, [field]: [] }));
   };
 
-  // ✅ Submit to backend
-  // ✅ Submit to backend
+  // Helper function to get coordinates for a location
+  const getCoordinates = async (locationName) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          locationName
+        )}&limit=1`,
+        {
+          headers: {
+            'User-Agent': 'TravelBuddyApp/1.0'
+          }
+        }
+      );
+      const data = await res.json();
+      if (data && data.length > 0) {
+        return { lat: data[0].lat, lon: data[0].lon };
+      }
+    } catch (err) {
+      console.error("Error fetching coordinates:", err);
+    }
+    return { lat: null, lon: null };
+  };
+
+// inside PersonalizePlan, update AChandleSubmit's saving logic
 const handleSubmit = async (e) => {
   e.preventDefault();
   setLoading(true);
   setMessage("");
   try {
-    const token = localStorage.getItem("access");
-    if (!token) {
-      navigate("/login");
+    setMessage("Getting location coordinates...");
+    setMessageType("success");
+
+    const startCoords = await getCoordinates(formData.startLocation);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // rate limit
+    const destCoords = await getCoordinates(formData.destination);
+
+    if (!startCoords.lat || !destCoords.lat) {
+      setMessage("Could not find coordinates for the locations. Please try different location names.");
+      setMessageType("error");
+      setLoading(false);
       return;
     }
 
-    const response = await fetch("http://127.0.0.1:8000/api/travel/personalize-plan/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(formData),
-    });
+    // Build payload (include coords)
+    const payload = {
+      startLocation: formData.startLocation,
+      destination: formData.destination,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      start_lat: startCoords.lat,
+      start_lon: startCoords.lon,
+      dest_lat: destCoords.lat,
+      dest_lon: destCoords.lon,
+      groupType: formData.groupType || "solo",
+    };
 
-    const data = await response.json();
+    setMessage("Saving your plan...");
+    setMessageType("success");
 
-    if (response.ok) {
-      setMessage("Travel plan saved successfully!");
-      setMessageType("success");
+    // Try to POST the plan (authenticated if token present)
+    const token = localStorage.getItem("access");
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      // 🔥 Call itinerary generation API right after saving
-      const itineraryRes = await fetch("http://127.0.0.1:8000/api/travel/generate-itinerary/", {
+    let savedPlanId = null;
+    try {
+      const resp = await fetch("http://127.0.0.1:8000/api/travel/personalize-plan/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
+        headers,
+        body: JSON.stringify(payload),
       });
 
-      const itineraryData = await itineraryRes.json();
-
-      // ✅ Navigate to itinerary page with data
-      navigate("/itinerary", { state: { itinerary: itineraryData.itinerary } });
-    } else {
-      setMessage(data.detail || "Failed to save travel plan.");
-      setMessageType("error");
+      // Parse response if possible
+      const data = await resp.json().catch(() => ({}));
+      if (resp.status === 201 || resp.ok) {
+        // prefer plan_id if view returns it, else try `id`
+        savedPlanId = data.plan_id || data.id || data.pk || null;
+        // if serializer returned whole object but no id, try to read serializer data
+        if (!savedPlanId && data && typeof data === "object") {
+          if (data.id) savedPlanId = data.id;
+        }
+      } else if (resp.status === 401) {
+        // token expired — remove and continue as guest
+        localStorage.removeItem("access");
+        localStorage.removeItem("refresh");
+      } else {
+        console.warn("Plan save returned non-OK:", resp.status, data);
+      }
+    } catch (err) {
+      console.error("Error saving plan to backend:", err);
+      // proceed as guest if backend down
     }
+
+    setMessage("Loading your travel itinerary...");
+    setMessageType("success");
+
+    // Pass plan_id (can be null) and coordinates to itinerary route
+    navigate("/itinerary", {
+      state: {
+        ...formData,
+        startCoords,
+        destCoords,
+        plan_id: savedPlanId,
+      },
+    });
+
   } catch (error) {
-    setMessage("An error occurred while saving the travel plan.");
+    console.error("Error:", error);
+    setMessage("An error occurred while processing your request.");
     setMessageType("error");
   } finally {
     setLoading(false);
@@ -292,12 +397,10 @@ const handleSubmit = async (e) => {
 
   return (
     <PageContainer>
-      {/* ✅ Sidebar on the left */}
       <SidebarWrapper>
         <Sidebar />
       </SidebarWrapper>
 
-      {/* ✅ Main content on the right */}
       <ContentWrapper>
         <FormCard>
           <CloseButton onClick={() => navigate("/dashboard")}>
@@ -317,6 +420,7 @@ const handleSubmit = async (e) => {
                   onChange={handleInputChange}
                   placeholder="Enter starting location"
                   autoComplete="off"
+                  required
                 />
                 <LocationButton
                   type="button"
@@ -350,6 +454,7 @@ const handleSubmit = async (e) => {
                   onChange={handleInputChange}
                   placeholder="Enter destination"
                   autoComplete="off"
+                  required
                 />
                 <LocationButton
                   type="button"
@@ -395,12 +500,19 @@ const handleSubmit = async (e) => {
               />
             </FormGroup>
 
-            
-
             {/* Submit */}
             <SubmitButton type="submit" disabled={loading}>
-              <FaPaperPlane />
-              {loading ? "Saving..." : "Save Plan"}
+              {loading ? (
+                <>
+                  <LoadingSpinner />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <FaPaperPlane />
+                  Plan My Trip
+                </>
+              )}
             </SubmitButton>
 
             {message && <Message type={messageType}>{message}</Message>}

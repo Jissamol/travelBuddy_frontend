@@ -139,11 +139,7 @@ function Login() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <div style={forgotPasswordStyle}>
-            <a href="/forgot-password" style={forgotPasswordLink}>
-              Forgot Password?
-            </a>
-          </div>
+          
           <button type="submit" style={buttonStyle}>
             Login
           </button>
